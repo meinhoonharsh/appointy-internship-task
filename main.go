@@ -102,6 +102,8 @@ func main() {
 }
 func availabilityHandler(w http.ResponseWriter, r *http.Request) {
 
+	start := time.Now()
+
 	// get query parameters
 	queryParams := r.URL.Query()
 
@@ -238,7 +240,19 @@ func availabilityHandler(w http.ResponseWriter, r *http.Request) {
 	// write response
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
-	w.Write(availableSlotsJson)
+
+	elapsed := time.Since(start)
+	elapsedSeconds := int64(elapsed.Seconds())
+
+	finalResult := map[string]interface{}{
+		"available_slots": availableSlots,
+		"time_taken":      elapsedSeconds,
+	}
+
+	json.NewEncoder(w).Encode(finalResult)
+	//
+
+	// w.Write(finalResult)
 
 }
 
