@@ -5,7 +5,10 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"strconv"
 	"time"
+
+	"github.com/gorilla/mux"
 	// "time"
 )
 
@@ -82,24 +85,58 @@ func StringToTime(timeStr string) (time.Time, error) {
 
 func main() {
 
+	// create router
+	router := mux.NewRouter()
+
+	// create /availability endpoint
+	router.HandleFunc("/availability", availabilityHandler).Methods("GET")
+
+	// Run server
+	http.ListenAndServe(":8000", router)
+
 	// - resourceId [Required]: ID of the pitch
 	// - date [Required]: date in YYYY-MM-DD format
 	// - duration [Required]: time duration in minutes (e.g., 30, 60, 120)
 	// - quantity [Required]:  capacity to reserve
 
-	inputParam := map[string]interface{}{
-		"resourceId": "res_2",
-		"date":       "2023-08-05",
-		"duration":   "30",
-		"quantity":   4,
+}
+func availabilityHandler(w http.ResponseWriter, r *http.Request) {
+
+	// get query parameters
+	queryParams := r.URL.Query()
+
+	// // get resourceId
+	resourceIdParam := queryParams.Get("resourceId")
+	dateParam := queryParams.Get("date")
+	durationParam := queryParams.Get("duration")
+	quantityParam := queryParams.Get("quantity")
+
+	if resourceIdParam == "" || dateParam == "" || durationParam == "" || quantityParam == "" {
+		fmt.Println("Missing Parameters")
+		return
 	}
+
+	inputParam := map[string]interface{}{
+		"resourceId": resourceIdParam,
+		"date":       dateParam,
+		"duration":   durationParam,
+		"quantity":   quantityParam,
+	}
+
+	// inputParam := map[string]interface{}{
+	// 	"resourceId": "res_2",
+	// 	"date":       "2023-08-05",
+	// 	"duration":   "30",
+	// 	"quantity":   4,
+	// }
 
 	// Create startTime and EndTime in format YYYY-MM-DDTHH:mm:ss.sssZ from inputParam
 	resourceId := inputParam["resourceId"].(string)
 	startTime := inputParam["date"].(string) + "T00:00:00Z"
 	endTime := inputParam["date"].(string) + "T23:59:00Z"
 	// quantity is number of slots to be booked
-	quantity := int64(inputParam["quantity"].(int))
+	quantityInt, _ := strconv.Atoi(inputParam["quantity"].(string))
+	quantity := int64(quantityInt)
 
 	// declare payload
 	payload := map[string]interface{}{
@@ -197,6 +234,11 @@ func main() {
 	// Convert availableSlots to json
 	availableSlotsJson, _ := json.Marshal(availableSlots)
 	fmt.Println("Available Slots Json: ", string(availableSlotsJson))
+
+	// write response
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	w.Write(availableSlotsJson)
 
 }
 
