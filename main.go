@@ -91,13 +91,15 @@ func main() {
 		"resourceId": "res_2",
 		"date":       "2023-08-05",
 		"duration":   "30",
-		"quantity":   "1",
+		"quantity":   4,
 	}
 
 	// Create startTime and EndTime in format YYYY-MM-DDTHH:mm:ss.sssZ from inputParam
 	resourceId := inputParam["resourceId"].(string)
 	startTime := inputParam["date"].(string) + "T00:00:00Z"
 	endTime := inputParam["date"].(string) + "T23:59:00Z"
+	// quantity is number of slots to be booked
+	quantity := int64(inputParam["quantity"].(int))
 
 	// declare payload
 	payload := map[string]interface{}{
@@ -158,17 +160,25 @@ func main() {
 				}
 			}
 
-			// // check if j is in appointment
-			// for k := 0; k < len(appointmentMap); k++ {
-			// 	// convert string to time
-			// 	appointmentStartTime, _ := StringToTime(appointmentMap[k].StartTime)
-			// 	appointmentEndTime, _ := StringToTime(appointmentMap[k].EndTime)
+			// check if j is in appointment hours and quantity is available
+			for l := 0; l < len(appointmentMap); l++ {
+				// convert string to time
+				appointmentStartTime, _ := StringToTime(appointmentMap[l].StartTime)
+				appointmentEndTime, _ := StringToTime(appointmentMap[l].EndTime)
 
-			// 	if j.After(appointmentStartTime) && j.Before(appointmentEndTime) {
-			// 		fmt.Println("blocked")
-			// 		break
-			// 	}
-			// }
+				if (j.Equal(appointmentStartTime) || j.After(appointmentStartTime)) && (j.Before(appointmentEndTime) || j.Before(appointmentEndTime)) {
+
+					businessHourQuantity := businesshoursMap[i].Quantity
+					appointmentQuantity := appointmentMap[l].Quantity
+
+					// change into int64 and check if quantity is available
+					if businessHourQuantity-appointmentQuantity < quantity {
+						available = false
+						break
+					}
+
+				}
+			}
 
 			if available {
 				fmt.Println("available")
@@ -213,7 +223,7 @@ func apiCall(endpoint string, payload map[string]interface{}) string {
 		fmt.Println(err)
 	}
 
-	req.Header.Add("Authorization", "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOiIyMDIzLTA4LTEwVDAwOjAwOjAwWiIsInVzZXJfaWQiOjMwMDF9.8pZMhoqZdBLqOKT0V7perD4vkoA347idSHVLaCcdefs")
+	req.Header.Add("Authorization", "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOiIyMDIzLTA4LTEwVDAwOjAwOjAwWiIsInVzZXJfaWQiOjc1fQ.2m_F_k0qqZiHlFduAZbkBX4i2DbngyROw1rYKqvXOwg")
 	req.Header.Add("Content-Type", "application/json")
 
 	// send request
