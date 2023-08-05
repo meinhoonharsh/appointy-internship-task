@@ -120,7 +120,7 @@ func main() {
 	var appointmentMap []Appointment
 	json.Unmarshal([]byte(appointment), &appointmentMap)
 
-	// var availableSlots []Slot
+	var availableSlots []Slot
 
 	// check for availability of resource on given date for given duration
 	for i := 0; i < len(businesshoursMap); i++ {
@@ -154,7 +154,6 @@ func main() {
 				if (j.Equal(blockStartTime) || j.After(blockStartTime)) && (j.Before(blockEndTime) || j.Before(blockEndTime)) {
 
 					available = false
-					fmt.Println("blocked")
 					break
 				}
 			}
@@ -173,12 +172,21 @@ func main() {
 
 			if available {
 				fmt.Println("available")
+				availableSlots = append(availableSlots, Slot{TimeToString(j), TimeToString(j.Add(duration))})
+			} else {
+				fmt.Println("blocked")
 			}
 
 		}
 
 		fmt.Println("")
+
 	}
+
+	fmt.Println("Available Slots: ", availableSlots)
+	// Convert availableSlots to json
+	availableSlotsJson, _ := json.Marshal(availableSlots)
+	fmt.Println("Available Slots Json: ", string(availableSlotsJson))
 
 }
 
