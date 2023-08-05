@@ -30,6 +30,11 @@ type BlockHour struct {
 	EndTime    string `json:"end_time"`
 }
 
+type Slot struct {
+	StartTime string `json:"start_time"`
+	EndTime   string `json:"end_time"`
+}
+
 type Appointment struct {
 	Id         string `json:"id"`
 	ResourceId string `json:"resource_id"`
@@ -105,22 +110,75 @@ func main() {
 	blockhours := apiCall("/block-hours", payload)
 	appointment := apiCall("/appointments", payload)
 
-	// change businesshours from string to interface
-	var businesshoursInterface interface{}
-	json.Unmarshal([]byte(businesshours), &businesshoursInterface)
+	// change businesshours from string to Maps of BusinessHour struct
+	var businesshoursMap []BusinessHour
+	json.Unmarshal([]byte(businesshours), &businesshoursMap)
 
-	var blockhoursInterface interface{}
-	json.Unmarshal([]byte(blockhours), &blockhoursInterface)
+	var blockhoursMap []BlockHour
+	json.Unmarshal([]byte(blockhours), &blockhoursMap)
 
-	var appointmentInterface interface{}
-	json.Unmarshal([]byte(appointment), &appointmentInterface)
+	var appointmentMap []Appointment
+	json.Unmarshal([]byte(appointment), &appointmentMap)
+
+	// var availableSlots []Slot
 
 	// check for availability of resource on given date for given duration
-	// if available, create appointment
-	// else return error
+	for i := 0; i < len(businesshoursMap); i++ {
+		// fmt.Println(businesshoursMap[i].StartTime)
+		// fmt.Println(businesshoursMap[i].EndTime)
 
-	// Avaible time slots for given date
-	// {start_time: 10:00 am, end_time: 11:00 am, quantity: 5)}
+		// convert string to time
+		startTime, _ := StringToTime(businesshoursMap[i].StartTime)
+		endTime, _ := StringToTime(businesshoursMap[i].EndTime)
+
+		// convert duration from string to int64
+		duration, _ := time.ParseDuration(inputParam["duration"].(string) + "m")
+
+		// fmt.Println("Business Hours: ", i+1)
+		// fmt.Println("Start Time: ", startTime, "End Time: ", endTime)
+		// fmt.Println("Duration: ", duration)
+
+		// check all available slots in businesshours
+
+		for j := startTime; j.Before(endTime); j = j.Add(duration) {
+			var available bool = true
+
+			// fmt.Println("Slot: ", j, "to", j.Add(duration))
+
+			// check if j is in blockhours
+			for k := 0; k < len(blockhoursMap); k++ {
+				// convert string to time
+				blockStartTime, _ := StringToTime(blockhoursMap[k].StartTime)
+				blockEndTime, _ := StringToTime(blockhoursMap[k].EndTime)
+
+				if (j.Equal(blockStartTime) || j.After(blockStartTime)) && (j.Before(blockEndTime) || j.Before(blockEndTime)) {
+
+					available = false
+					fmt.Println("blocked")
+					break
+				}
+			}
+
+			// // check if j is in appointment
+			// for k := 0; k < len(appointmentMap); k++ {
+			// 	// convert string to time
+			// 	appointmentStartTime, _ := StringToTime(appointmentMap[k].StartTime)
+			// 	appointmentEndTime, _ := StringToTime(appointmentMap[k].EndTime)
+
+			// 	if j.After(appointmentStartTime) && j.Before(appointmentEndTime) {
+			// 		fmt.Println("blocked")
+			// 		break
+			// 	}
+			// }
+
+			if available {
+				fmt.Println("available")
+			}
+
+		}
+
+		fmt.Println("")
+	}
 
 }
 
